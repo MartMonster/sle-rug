@@ -27,7 +27,7 @@ syntax AssignValue = "=" Expr;
 syntax Expr = 
   left Expr "||" Expr
   > left Expr "&&" Expr
-  | left Expr "==" Expr
+  > left Expr "==" Expr
   | left Expr "!=" Expr
   > left Expr "\<" Expr
   | left Expr "\>" Expr
