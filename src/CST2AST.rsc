@@ -24,19 +24,19 @@ AForm cst2ast(start[Form] sf) {
 
 default AQuestion cst2ast(Question q) {
   switch (q) {
-    case (Question)`<Str question2> <Id name> : <Type t> = <Expr exp>`: return question("<question2>", id("<name>"), cst2ast(t), cst2ast(exp), src=q.src);
-    case (Question)`<Str question2> <Id name> : <Type t>`: return question("<question2>", id("<name>"), cst2ast(t), src=q.src);
+    case (Question)`<Str question2> <Id name> : <Type t> = <Expr exp>`: return question("<question2>"[1..-1], id("<name>", src=name.src), cst2ast(t), cst2ast(exp), src=q.src);
+    case (Question)`<Str question2> <Id name> : <Type t>`: return question("<question2>"[1..-1], id("<name>", src=name.src), cst2ast(t), src=q.src);
     case (Question)`if ( <Expr guard> ) { <Question* ifQuestions> } else { <Question* elseQuestions> }`: return ifstm(cst2ast(guard), [cst2ast(q) | Question q <- ifQuestions], [cst2ast(q) | Question q <- elseQuestions], src=q.src);
     case (Question)`if ( <Expr guard> ) { <Question* ifQuestions> }`: return ifstm(cst2ast(guard), [cst2ast(q) | Question q <- ifQuestions], src=q.src);
+    default: throw "Unhandled question: <q>";
   }
-  throw "Unhandled question: <q>";
 }
 
 AExpr cst2ast(Expr e) {
   switch (e) {
-    case (Expr)`<Id x>`: return ref(id("<x>", src=x.src), src=x.src);
+    case (Expr)`<Id x>`: return ref(id("<x>", src=x.src), src=e.src);
     case (Expr)`<Int n>`: return integer(toInt("<n>"), src=n.src);
-    case (Expr)`<Str s>`: return string("<s>", src=s.src);
+    case (Expr)`<Str s>`: return string("<s>"[1..-1], src=s.src);
     case (Expr)`<Bool b>`: return boolean(fromString("<b>"), src=b.src);
     case (Expr)`<Expr e1> + <Expr e2>`: return add(cst2ast(e1), cst2ast(e2), src=e.src);
     case (Expr)`<Expr e1> - <Expr e2>`: return sub(cst2ast(e1), cst2ast(e2), src=e.src);
