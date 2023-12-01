@@ -8,42 +8,39 @@ extend lang::std::Id;
  */
 
 start syntax Form 
-  = "form" Id name "{" Stuff* questions "}";
-
-syntax Stuff = Question | If;
-
-syntax If = "if" "(" Expr ")" "{" Stuff* questions "}" Else?;
-
-syntax Else = "else" "{" Stuff* stuff "}";
+  = "form" Id name "{" Question* questions "}";
 
 // TODO: question, computed question, block, if-then-else, if-then
-syntax Question = Str question Id id ":" Type type AssignValue?;
-
-syntax AssignValue = "=" Expr;
+syntax Question 
+  = Str question Id id ":" Type type "=" Expr exp
+  | Str question Id id ":" Type type
+  | "if" "(" Expr guard ")" "{" Question* ifQuestions "}" "else" "{" Question* elseQuestions "}"
+  | "if" "(" Expr guard ")" "{" Question* ifQuestions "}"
+  ;
 
 // TODO: +, -, *, /, &&, ||, !, >, <, <=, >=, ==, !=, literals (bool, int, str)
 // Think about disambiguation using priorities and associativity
 // and use C/Java style precedence rules (look it up on the internet)
-syntax Expr = 
-  left Expr "||" Expr
-  > left Expr "&&" Expr
-  > left Expr "==" Expr
-  | left Expr "!=" Expr
-  > left Expr "\<" Expr
-  | left Expr "\>" Expr
-  | left Expr "\<=" Expr
-  | left Expr "=\>" Expr
-  > left Expr "+" Expr
-  | left Expr "-" Expr
-  > left Expr "*" Expr
-  | left Expr "/" Expr 
-  > right "!" Expr
-  | right "-" Expr
-  > "(" Expr ")"
-  | Int
+syntax Expr =
+  Int
   | Bool
   | Str
   | Id \ "true" \ "false"
+  | "(" Expr ")"
+  > left ("!" Expr
+  | "-" Expr)
+  > left (left Expr "*" Expr
+  | left Expr "/" Expr)
+  > left (left Expr "+" Expr
+  | left Expr "-" Expr)
+  > left (non-assoc Expr "\<" Expr
+  | non-assoc Expr "\>" Expr
+  | non-assoc Expr "\<=" Expr
+  | non-assoc Expr "=\>" Expr
+  | non-assoc Expr "==" Expr
+  | non-assoc Expr "!=" Expr)
+  > non-assoc Expr "&&" Expr
+  > non-assoc Expr "||" Expr
   ;
   
 syntax Type = "integer" | "boolean";
