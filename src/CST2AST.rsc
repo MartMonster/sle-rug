@@ -52,6 +52,7 @@ AExpr cst2ast(Expr e) {
     case (Expr)`<Expr e1> \>= <Expr e2>`: return geq(cst2ast(e1), cst2ast(e2), src=e.src);
     case (Expr)`- <Expr e>`: return neg(cst2ast(e), src=e.src);
     case (Expr)`! <Expr e>`: return not(cst2ast(e), src=e.src);
+    case (Expr)`( <Expr e> )`: return cst2ast(e);
 
     
     default: throw "Unhandled expression: <e>";
