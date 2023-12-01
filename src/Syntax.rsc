@@ -36,7 +36,7 @@ syntax Expr =
   > left (non-assoc Expr "\<" Expr
   | non-assoc Expr "\>" Expr
   | non-assoc Expr "\<=" Expr
-  | non-assoc Expr "=\>" Expr
+  | non-assoc Expr "\>=" Expr
   | non-assoc Expr "==" Expr
   | non-assoc Expr "!=" Expr)
   > non-assoc Expr "&&" Expr

@@ -59,5 +59,5 @@ AExpr cst2ast(Expr e) {
 }
 
 default AType cst2ast(Type t) {
-  throw "Not yet implemented <t>";
+  return typeName("<t>", src=t.src);
 }
