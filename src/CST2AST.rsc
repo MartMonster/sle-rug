@@ -4,6 +4,8 @@ import Syntax;
 import AST;
 
 import ParseTree;
+import String;
+import Boolean;
 
 /*
  * Implement a mapping from concrete syntax trees (CSTs) to abstract syntax trees (ASTs)
@@ -33,7 +35,24 @@ default AQuestion cst2ast(Question q) {
 AExpr cst2ast(Expr e) {
   switch (e) {
     case (Expr)`<Id x>`: return ref(id("<x>", src=x.src), src=x.src);
-    // etc.
+    case (Expr)`<Int n>`: return integer(toInt("<n>"), src=n.src);
+    case (Expr)`<Str s>`: return string("<s>", src=s.src);
+    case (Expr)`<Bool b>`: return boolean(fromString("<b>"), src=b.src);
+    case (Expr)`<Expr e1> + <Expr e2>`: return add(cst2ast(e1), cst2ast(e2), src=e.src);
+    case (Expr)`<Expr e1> - <Expr e2>`: return sub(cst2ast(e1), cst2ast(e2), src=e.src);
+    case (Expr)`<Expr e1> * <Expr e2>`: return mul(cst2ast(e1), cst2ast(e2), src=e.src);
+    case (Expr)`<Expr e1> / <Expr e2>`: return div(cst2ast(e1), cst2ast(e2), src=e.src);
+    case (Expr)`<Expr e1> || <Expr e2>`: return or(cst2ast(e1), cst2ast(e2), src=e.src);
+    case (Expr)`<Expr e1> && <Expr e2>`: return and(cst2ast(e1), cst2ast(e2), src=e.src);
+    case (Expr)`<Expr e1> == <Expr e2>`: return eq(cst2ast(e1), cst2ast(e2), src=e.src);
+    case (Expr)`<Expr e1> != <Expr e2>`: return neq(cst2ast(e1), cst2ast(e2), src=e.src);
+    case (Expr)`<Expr e1> \< <Expr e2>`: return lt(cst2ast(e1), cst2ast(e2), src=e.src);
+    case (Expr)`<Expr e1> \> <Expr e2>`: return gt(cst2ast(e1), cst2ast(e2), src=e.src);
+    case (Expr)`<Expr e1> \<= <Expr e2>`: return leq(cst2ast(e1), cst2ast(e2), src=e.src);
+    case (Expr)`<Expr e1> \>= <Expr e2>`: return geq(cst2ast(e1), cst2ast(e2), src=e.src);
+    case (Expr)`- <Expr e>`: return neg(cst2ast(e), src=e.src);
+    case (Expr)`! <Expr e>`: return not(cst2ast(e), src=e.src);
+
     
     default: throw "Unhandled expression: <e>";
   }
