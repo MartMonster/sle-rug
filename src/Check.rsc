@@ -11,24 +11,64 @@ data Type
   | tunknown()
   ;
 
+Type typeFromString(str t) {
+  switch(t) {
+    case "integer": return tint();
+    case "boolean": return tbool();
+    default: return tunknown();
+  }
+}
+
 // the type environment consisting of defined questions in the form 
 alias TEnv = rel[loc def, str name, str label, Type \type];
 
 // To avoid recursively traversing the form, use the `visit` construct
 // or deep match (e.g., `for (/question(...) := f) {...}` ) 
 TEnv collect(AForm f) {
-  return {}; 
+  TEnv tenv = {};
+  visit(f) {
+    case question(str question, AId id, AType t, _): tenv += <id.src, id.name, question, typeFromString(t.name)>;
+    case question(str question, AId id, AType t): tenv += <id.src, id.name, question, typeFromString(t.name)>;
+  }
+  return tenv; 
 }
 
 set[Message] check(AForm f, TEnv tenv, UseDef useDef) {
-  return {}; 
+  set[Message] msgs = {};
+
+  set[tuple[loc, str, str, Type]] seen = {};
+  for (tuple[loc, str, str, Type] t <- tenv) {
+    if (t<1> in seen<1>) {
+      msgs += {error("Redefined question", t<0>)};
+    }
+
+    if (t<2> in seen<2>) {
+      msgs += {warning("Redefined question", t<0>)};
+    }
+
+    seen += {t};
+  }
+
+  for (AQuestion q <- f.questions) {
+    msgs += check(q, tenv, useDef);
+  }
+
+  return msgs; 
 }
 
 // - produce an error if there are declared questions with the same name but different types.
 // - duplicate labels should trigger a warning 
 // - the declared type computed questions should match the type of the expression.
 set[Message] check(AQuestion q, TEnv tenv, UseDef useDef) {
-  return {}; 
+  set[Message] msgs = {};
+
+  switch(q) {
+    case question(_, _, _, AExpr assignvalue): msgs += check(assignvalue, tenv, useDef);
+    case ifstm(AExpr guard, list[AQuestion] ifQuestions, list[AQuestion] elseQuestions): msgs += [check(qs, tenv, useDef) | qs <- ifQuestions + elseQuestions + guard];
+    case ifstm(AExpr guard, list[AQuestion] ifQuestions): msgs += [check(qs, tenv, useDef) | qs <- ifQuestions + guard];
+  }
+
+  return msgs; 
 }
 
 // Check operand compatibility with operators.
