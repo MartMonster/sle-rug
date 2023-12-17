@@ -63,37 +63,193 @@ set[Message] check(AQuestion q, TEnv tenv, UseDef useDef) {
   set[Message] msgs = {};
 
   switch(q) {
-    case question(_, _, _, AExpr assignvalue): msgs += check(assignvalue, tenv, useDef);
-    case ifstm(AExpr guard, list[AQuestion] ifQuestions, list[AQuestion] elseQuestions): msgs += [check(qs, tenv, useDef) | qs <- ifQuestions + elseQuestions + guard];
-    case ifstm(AExpr guard, list[AQuestion] ifQuestions): msgs += [check(qs, tenv, useDef) | qs <- ifQuestions + guard];
+    case question(_, _, _, AExpr assignvalue): msgs += check(assignvalue, tenv, useDef)<0>;
+    case ifstm(AExpr guard, list[AQuestion] ifQuestions, list[AQuestion] elseQuestions): {
+      msgs += [check(qs, tenv, useDef) | qs <- ifQuestions + elseQuestions];
+      g = check(guard, tenv, useDef);
+      msgs += g<0>;
+      if (g<1> != tbool()) {
+        msgs += { error("Guard expression must be boolean", q.src) };
+      }
+    }
+    case ifstm(AExpr guard, list[AQuestion] ifQuestions): {
+      msgs += [check(qs, tenv, useDef) | qs <- ifQuestions];
+      g = check(guard, tenv, useDef);
+      msgs += g<0>;
+      if (g<1> != tbool()) {
+        msgs += { error("Guard expression must be boolean", q.src) };
+      }
+    }
   }
-
-  return msgs; 
+  return msgs;
 }
 
 // Check operand compatibility with operators.
 // E.g. for an addition node add(lhs, rhs), 
 //   the requirement is that typeOf(lhs) == typeOf(rhs) == tint()
-set[Message] check(AExpr e, TEnv tenv, UseDef useDef) {
+tuple[set[Message], Type] check(AExpr e, TEnv tenv, UseDef useDef) {
   set[Message] msgs = {};
-  
-  switch (e) {
-    case ref(AId x):
-      msgs += { error("Undeclared question", x.src) | useDef[x.src] == {} };
+  Type t = tunknown();
 
-    // etc.
+  switch (e) {
+    case ref(AId x): {
+      msgs += { error("Undeclared question", x.src) | useDef[x.src] == {} };
+      t = typeOf(ref(x), tenv, useDef);
+      return <msgs, t>;
+    }
+    case integer(int i): return <{}, typeOf(integer(i), tenv, useDef)>;
+    case boolean(bool b): return <{}, typeOf(boolean(b), tenv, useDef)>;
+    case string(str s): return <{}, typeOf(string(s), tenv, useDef)>;
+    case neg(AExpr expr): {
+      c = check(expr, tenv, useDef);
+      msgs += c<0>;
+      if (c<1> != tint()) {
+        msgs += { error("Cannot use \'-\' operator on non-integer", e.src) };
+      }
+      return <msgs, c<1>>;
+    }
+    case mul(AExpr left, AExpr right): {
+      l = check(left, tenv, useDef);
+      r = check(right, tenv, useDef);
+      msgs += l<0>;
+      msgs += r<0>;
+      if (l<1> != tint() || r<1> != tint()) {
+        msgs += { error("Cannot use \'*\' operator on non-integer", e.src) };
+      }
+      return <msgs, tint()>;
+    }
+    case div(AExpr left, AExpr right): {
+      l = check(left, tenv, useDef);
+      r = check(right, tenv, useDef);
+      msgs += l<0>;
+      msgs += r<0>;
+      if (l<1> != tint() || r<1> != tint()) {
+        msgs += { error("Cannot use \'/\' operator on non-integer", e.src) };
+      }
+      return <msgs, tint()>;
+    }
+    case add(AExpr left, AExpr right): {
+      l = check(left, tenv, useDef);
+      r = check(right, tenv, useDef);
+      msgs += l<0>;
+      msgs += r<0>;
+      if (l<1> != tint() || r<1> != tint()) {
+        msgs += { error("Cannot use \'+\' operator on non-integer", e.src) };
+      }
+      return <msgs, tint()>;
+    }
+    case sub(AExpr left, AExpr right): {
+      l = check(left, tenv, useDef);
+      r = check(right, tenv, useDef);
+      msgs += l<0>;
+      msgs += r<0>;
+      if (l<1> != tint() || r<1> != tint()) {
+        msgs += { error("Cannot use \'-\' operator on non-integer", e.src) };
+      }
+      return <msgs, tint()>;
+    }
+    case and(AExpr left, AExpr right): {
+      l = check(left, tenv, useDef);
+      r = check(right, tenv, useDef);
+      msgs += l<0>;
+      msgs += r<0>;
+      if (l<1> != tbool() || r<1> != tbool()) {
+        msgs += { error("Cannot use \'&&\' operator on non-boolean", e.src) };
+      }
+      return <msgs, tint()>;
+    }
+    case or(AExpr left, AExpr right):{
+      l = check(left, tenv, useDef);
+      r = check(right, tenv, useDef);
+      msgs += l<0>;
+      msgs += r<0>;
+      if (l<1> != tbool() || r<1> != tbool()) {
+        msgs += { error("Cannot use \'||\' operator on non-boolean", e.src) };
+      }
+      return <msgs, tint()>;
+    }
+    case eq(AExpr left, AExpr right): {
+      l = check(left, tenv, useDef);
+      r = check(right, tenv, useDef);
+      msgs += l<0>;
+      msgs += r<0>;
+      if (l<1> != r<1>) {
+        msgs += { error("Cannot use \'==\' operator on non-boolean", e.src) };
+      }
+      return <msgs, l<1>>;
+    }
+    case neq(AExpr left, AExpr right): {
+      l = check(left, tenv, useDef);
+      r = check(right, tenv, useDef);
+      msgs += l<0>;
+      msgs += r<0>;
+      if (l<1> != r<1>) {
+        msgs += { error("Cannot use \'!=\' operator on non-boolean", e.src) };
+      }
+      return <msgs, l<1>>;
+    }
+    case lt(AExpr left, AExpr right): {
+      l = check(left, tenv, useDef);
+      r = check(right, tenv, useDef);
+      msgs += l<0>;
+      msgs += r<0>;
+      if (l<1> != tint() || r<1> != tint()) {
+        msgs += { error("Cannot use \'\<\' operator on non-integer", e.src) };
+      }
+      return <msgs, tint()>;
+    }
+    case leq(AExpr left, AExpr right): {
+      l = check(left, tenv, useDef);
+      r = check(right, tenv, useDef);
+      msgs += l<0>;
+      msgs += r<0>;
+      if (l<1> != tint() || r<1> != tint()) {
+        msgs += { error("Cannot use \'\<=\' operator on non-integer", e.src) };
+      }
+      return <msgs, tint()>;
+    }
+    case gt(AExpr left, AExpr right): {
+      l = check(left, tenv, useDef);
+      r = check(right, tenv, useDef);
+      msgs += l<0>;
+      msgs += r<0>;
+      if (l<1> != tint() || r<1> != tint()) {
+        msgs += { error("Cannot use \'\>\' operator on non-integer", e.src) };
+      }
+      return <msgs, tint()>;
+    }
+    case geq(AExpr left, AExpr right): {
+      l = check(left, tenv, useDef);
+      r = check(right, tenv, useDef);
+      msgs += l<0>;
+      msgs += r<0>;
+      if (l<1> != tint() || r<1> != tint()) {
+        msgs += { error("Cannot use \'\>=\' operator on non-integer", e.src) };
+      }
+      return <msgs, tint()>;
+    }
+    case not(AExpr expr): {
+      c = check(expr, tenv, useDef);
+      msgs += c<0>;
+      if (c<1> != tbool()) {
+        msgs += { error("Cannot use \'!\' operator on non-integer", e.src) };
+      }
+      return <msgs, c<1>>;
+    }
   }
   
-  return msgs; 
+  return <msgs, t>; 
 }
 
 Type typeOf(AExpr e, TEnv tenv, UseDef useDef) {
   switch (e) {
     case ref(id(_, src = loc u)):  
-      if (<u, loc d> <- useDef, <d, x, _, Type t> <- tenv) {
+      if (<u, loc d> <- useDef, <d, _, _, Type t> <- tenv) {
         return t;
       }
-    // etc.
+    case integer(_): return tint();
+    case boolean(_): return tbool();
+    case string(_): return tstr();
   }
   return tunknown(); 
 }
@@ -109,6 +265,3 @@ Type typeOf(AExpr e, TEnv tenv, UseDef useDef) {
  * default Type typeOf(AExpr _, TEnv _, UseDef _) = tunknown();
  *
  */
- 
- 
-
