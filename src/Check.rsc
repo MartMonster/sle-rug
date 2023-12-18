@@ -63,20 +63,18 @@ set[Message] check(AQuestion q, TEnv tenv, UseDef useDef) {
   set[Message] msgs = {};
 
   switch(q) {
-    case question(_, _, _, AExpr assignvalue): msgs += check(assignvalue, tenv, useDef)<0>;
+    case question(_, _, _, AExpr assignvalue): msgs += check(assignvalue, tenv, useDef);
     case ifstm(AExpr guard, list[AQuestion] ifQuestions, list[AQuestion] elseQuestions): {
       msgs += [check(qs, tenv, useDef) | qs <- ifQuestions + elseQuestions];
-      g = check(guard, tenv, useDef);
-      msgs += g<0>;
-      if (g<1> != tbool()) {
+      msgs += check(guard, tenv, useDef);
+      if (typeOf(guard, tenv, useDef) != tbool()) {
         msgs += { error("Guard expression must be boolean", q.src) };
       }
     }
     case ifstm(AExpr guard, list[AQuestion] ifQuestions): {
       msgs += [check(qs, tenv, useDef) | qs <- ifQuestions];
-      g = check(guard, tenv, useDef);
-      msgs += g<0>;
-      if (g<1> != tbool()) {
+      msgs += check(guard, tenv, useDef);
+      if (typeOf(guard, tenv, useDef) != tbool()) {
         msgs += { error("Guard expression must be boolean", q.src) };
       }
     }
@@ -87,158 +85,127 @@ set[Message] check(AQuestion q, TEnv tenv, UseDef useDef) {
 // Check operand compatibility with operators.
 // E.g. for an addition node add(lhs, rhs), 
 //   the requirement is that typeOf(lhs) == typeOf(rhs) == tint()
-tuple[set[Message], Type] check(AExpr e, TEnv tenv, UseDef useDef) {
+set[Message] check(AExpr e, TEnv tenv, UseDef useDef) {
   set[Message] msgs = {};
-  Type t = tunknown();
 
   switch (e) {
     case ref(AId x): {
       msgs += { error("Undeclared question", x.src) | useDef[x.src] == {} };
-      t = typeOf(ref(x), tenv, useDef);
-      return <msgs, t>;
+      return msgs;
     }
-    case integer(int i): return <{}, typeOf(integer(i), tenv, useDef)>;
-    case boolean(bool b): return <{}, typeOf(boolean(b), tenv, useDef)>;
-    case string(str s): return <{}, typeOf(string(s), tenv, useDef)>;
     case neg(AExpr expr): {
-      c = check(expr, tenv, useDef);
-      msgs += c<0>;
-      if (c<1> != tint()) {
+      msgs += check(expr, tenv, useDef);
+      if (typeOf(expr, tenv, useDef) != tint()) {
         msgs += { error("Cannot use \'-\' operator on non-integer", e.src) };
       }
-      return <msgs, c<1>>;
+      return msgs;
     }
     case mul(AExpr left, AExpr right): {
-      l = check(left, tenv, useDef);
-      r = check(right, tenv, useDef);
-      msgs += l<0>;
-      msgs += r<0>;
-      if (l<1> != tint() || r<1> != tint()) {
+      msgs += check(left, tenv, useDef);
+      msgs += check(right, tenv, useDef);
+      if (typeOf(left, tenv, useDef) != tint() || typeOf(right, tenv, useDef) != tint()) {
         msgs += { error("Cannot use \'*\' operator on non-integer", e.src) };
       }
-      return <msgs, tint()>;
+      return msgs;
     }
     case div(AExpr left, AExpr right): {
-      l = check(left, tenv, useDef);
-      r = check(right, tenv, useDef);
-      msgs += l<0>;
-      msgs += r<0>;
-      if (l<1> != tint() || r<1> != tint()) {
+      msgs += check(left, tenv, useDef);
+      msgs += check(right, tenv, useDef);
+      if (typeOf(left, tenv, useDef) != tint() || typeOf(right, tenv, useDef) != tint()) {
         msgs += { error("Cannot use \'/\' operator on non-integer", e.src) };
       }
-      return <msgs, tint()>;
+      return msgs;
     }
     case add(AExpr left, AExpr right): {
-      l = check(left, tenv, useDef);
-      r = check(right, tenv, useDef);
-      msgs += l<0>;
-      msgs += r<0>;
-      if (l<1> != tint() || r<1> != tint()) {
+      msgs += check(left, tenv, useDef);
+      msgs += check(right, tenv, useDef);
+      if (typeOf(left, tenv, useDef) != tint() || typeOf(right, tenv, useDef) != tint()) {
         msgs += { error("Cannot use \'+\' operator on non-integer", e.src) };
       }
-      return <msgs, tint()>;
+      return msgs;
     }
     case sub(AExpr left, AExpr right): {
-      l = check(left, tenv, useDef);
-      r = check(right, tenv, useDef);
-      msgs += l<0>;
-      msgs += r<0>;
-      if (l<1> != tint() || r<1> != tint()) {
+      msgs += check(left, tenv, useDef);
+      msgs += check(right, tenv, useDef);
+      if (typeOf(left, tenv, useDef) != tint() || typeOf(right, tenv, useDef) != tint()) {
         msgs += { error("Cannot use \'-\' operator on non-integer", e.src) };
       }
-      return <msgs, tint()>;
+      return msgs;
     }
     case and(AExpr left, AExpr right): {
-      l = check(left, tenv, useDef);
-      r = check(right, tenv, useDef);
-      msgs += l<0>;
-      msgs += r<0>;
-      if (l<1> != tbool() || r<1> != tbool()) {
+      msgs += check(left, tenv, useDef);
+      msgs += check(right, tenv, useDef);
+      if (typeOf(left, tenv, useDef) != tbool() || typeOf(right, tenv, useDef) != tbool()) {
         msgs += { error("Cannot use \'&&\' operator on non-boolean", e.src) };
       }
-      return <msgs, tint()>;
+      return msgs;
     }
     case or(AExpr left, AExpr right):{
-      l = check(left, tenv, useDef);
-      r = check(right, tenv, useDef);
-      msgs += l<0>;
-      msgs += r<0>;
-      if (l<1> != tbool() || r<1> != tbool()) {
+      msgs += check(left, tenv, useDef);
+      msgs += check(right, tenv, useDef);
+      if (typeOf(left, tenv, useDef) != tbool() || typeOf(right, tenv, useDef) != tbool()) {
         msgs += { error("Cannot use \'||\' operator on non-boolean", e.src) };
       }
-      return <msgs, tint()>;
+      return msgs;
     }
     case eq(AExpr left, AExpr right): {
-      l = check(left, tenv, useDef);
-      r = check(right, tenv, useDef);
-      msgs += l<0>;
-      msgs += r<0>;
-      if (l<1> != r<1>) {
-        msgs += { error("Cannot use \'==\' operator on non-boolean", e.src) };
+      msgs += check(left, tenv, useDef);
+      msgs += check(right, tenv, useDef);
+      if (typeOf(left, tenv, useDef) != typeOf(right, tenv, useDef)) {
+        msgs += { error("Lhs and Rhs of \'==\' must be of the same type", e.src) };
       }
-      return <msgs, l<1>>;
+      return msgs;
     }
     case neq(AExpr left, AExpr right): {
-      l = check(left, tenv, useDef);
-      r = check(right, tenv, useDef);
-      msgs += l<0>;
-      msgs += r<0>;
-      if (l<1> != r<1>) {
+      msgs += check(left, tenv, useDef);
+      msgs += check(right, tenv, useDef);
+      if (typeOf(left, tenv, useDef) != typeOf(right, tenv, useDef)) {
         msgs += { error("Cannot use \'!=\' operator on non-boolean", e.src) };
       }
-      return <msgs, l<1>>;
+      return msgs;
     }
     case lt(AExpr left, AExpr right): {
-      l = check(left, tenv, useDef);
-      r = check(right, tenv, useDef);
-      msgs += l<0>;
-      msgs += r<0>;
-      if (l<1> != tint() || r<1> != tint()) {
+      msgs += check(left, tenv, useDef);
+      msgs += check(right, tenv, useDef);
+      if (typeOf(left, tenv, useDef)!= tint() || typeOf(right, tenv, useDef) != tint()) {
         msgs += { error("Cannot use \'\<\' operator on non-integer", e.src) };
       }
-      return <msgs, tint()>;
+      return msgs;
     }
     case leq(AExpr left, AExpr right): {
-      l = check(left, tenv, useDef);
-      r = check(right, tenv, useDef);
-      msgs += l<0>;
-      msgs += r<0>;
-      if (l<1> != tint() || r<1> != tint()) {
+      msgs += check(left, tenv, useDef);
+      msgs += check(right, tenv, useDef);
+      if (typeOf(left, tenv, useDef)!= tint() || typeOf(right, tenv, useDef) != tint()) {
         msgs += { error("Cannot use \'\<=\' operator on non-integer", e.src) };
       }
-      return <msgs, tint()>;
+      return msgs;
     }
     case gt(AExpr left, AExpr right): {
-      l = check(left, tenv, useDef);
-      r = check(right, tenv, useDef);
-      msgs += l<0>;
-      msgs += r<0>;
-      if (l<1> != tint() || r<1> != tint()) {
+      msgs += check(left, tenv, useDef);
+      msgs += check(right, tenv, useDef);
+      if (typeOf(left, tenv, useDef)!= tint() || typeOf(right, tenv, useDef) != tint()) {
         msgs += { error("Cannot use \'\>\' operator on non-integer", e.src) };
       }
-      return <msgs, tint()>;
+      return msgs;
     }
     case geq(AExpr left, AExpr right): {
-      l = check(left, tenv, useDef);
-      r = check(right, tenv, useDef);
-      msgs += l<0>;
-      msgs += r<0>;
-      if (l<1> != tint() || r<1> != tint()) {
+      msgs += check(left, tenv, useDef);
+      msgs += check(right, tenv, useDef);
+      if (typeOf(left, tenv, useDef)!= tint() || typeOf(right, tenv, useDef) != tint()) {
         msgs += { error("Cannot use \'\>=\' operator on non-integer", e.src) };
       }
-      return <msgs, tint()>;
+      return msgs;
     }
     case not(AExpr expr): {
-      c = check(expr, tenv, useDef);
-      msgs += c<0>;
-      if (c<1> != tbool()) {
+      msgs += check(expr, tenv, useDef);
+      if (typeOf(expr, tenv, useDef) != tbool()) {
         msgs += { error("Cannot use \'!\' operator on non-integer", e.src) };
       }
-      return <msgs, c<1>>;
+      return msgs;
     }
   }
   
-  return <msgs, t>; 
+  return msgs;
 }
 
 Type typeOf(AExpr e, TEnv tenv, UseDef useDef) {
@@ -250,6 +217,20 @@ Type typeOf(AExpr e, TEnv tenv, UseDef useDef) {
     case integer(_): return tint();
     case boolean(_): return tbool();
     case string(_): return tstr();
+    case mul(_, _): return tint();
+    case div(_, _): return tint();
+    case add(_, _): return tint();
+    case sub(_, _): return tint();
+    case and(_, _): return tbool();
+    case or(_, _): return tbool();
+    case eq(_, _): return tbool();
+    case neq(_, _): return tbool();
+    case lt(_, _): return tbool();
+    case leq(_, _): return tbool();
+    case gt(_, _): return tbool();
+    case geq(_, _): return tbool();
+    case not(_): return tbool();
+    case neg(_): return tint();
   }
   return tunknown(); 
 }
