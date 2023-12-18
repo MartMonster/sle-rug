@@ -160,7 +160,7 @@ set[Message] check(AExpr e, TEnv tenv, UseDef useDef) {
       msgs += check(left, tenv, useDef);
       msgs += check(right, tenv, useDef);
       if (typeOf(left, tenv, useDef) != typeOf(right, tenv, useDef)) {
-        msgs += { error("Cannot use \'!=\' operator on non-boolean", e.src) };
+        msgs += { error("Lhs and Rhs of \'!=\' must be of the same type", e.src) };
       }
       return msgs;
     }
@@ -199,7 +199,7 @@ set[Message] check(AExpr e, TEnv tenv, UseDef useDef) {
     case not(AExpr expr): {
       msgs += check(expr, tenv, useDef);
       if (typeOf(expr, tenv, useDef) != tbool()) {
-        msgs += { error("Cannot use \'!\' operator on non-integer", e.src) };
+        msgs += { error("Cannot use \'!\' operator on non-boolean", e.src) };
       }
       return msgs;
     }
