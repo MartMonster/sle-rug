@@ -5,6 +5,7 @@ import Resolve;
 import IO;
 import lang::html::AST; // see standard library
 import lang::html::IO;
+import String;
 
 /*
  * Implement a compiler for QL to HTML and Javascript
@@ -25,56 +26,82 @@ void compile(AForm f) {
 }
 
 HTMLElement form2html(AForm f) {
-  list[HTMLElement] elems = [text(f.name)];
+  list[HTMLElement] elems = [h1([text(f.name)])];
   for (AQuestion q <- f.questions) {
-    elems += questionToHtml(q, 0);
+    elems += questionToHtml(q, 0)<0>;
   }
-  return html([body([h1(elems)])]);
+  jsFileName = split("/", "<f.src[extension="js"].top>")[-1];
+  return html([script([], src=substring(jsFileName, 0, size(jsFileName)-1)), body(elems)]);
 }
 
 tuple[HTMLElement, int] questionToHtml(AQuestion q, int ifCount) {
   switch (q) {
-    case question(str question, AId id, AType t, AExpr assignvalue): return <div([h2([text(question)]), label([text(id.name)]), inputTypeOfzoIGuess(t, id)]), ifCount>; // TODO: dit is geen input
+    case question(str question, AId id, AType t, AExpr assignvalue): return <div([h2([text(question)]), label([text("<id.name>")]), p([text("test")], id="<id.name>")]), ifCount>;
     case question(str question, AId id, AType t): return <div([h2([text(question)]), label([text(id.name)]), inputTypeOfzoIGuess(t, id)]), ifCount>;
     case ifstm(AExpr guard, list[AQuestion] ifQuestions, list[AQuestion] elseQuestions): {
       ifCount += 1;
       int ifCountOld = ifCount;
-      list[HTMLElement] ifElems = [];
+      list[HTMLElement] ifElems = [h3([text("if<ifCountOld>")])];
       for (AQuestion q <- ifQuestions) {
         tuple[HTMLElement, int] t = questionToHtml(q, ifCount);
         ifCount = t<1>;
         ifElems += t<0>;
       }
-      list[HTMLElement] elseElems = [];
+      list[HTMLElement] elseElems = [h3([text("else<ifCountOld>")])];
       for (AQuestion q <- elseQuestions) {
         tuple[HTMLElement, int] t = questionToHtml(q, ifCount);
         ifCount = t<1>;
         elseElems += t<0>;
       }
-      return <div([div([h3([text("if<ifCountOld>")]), ifElems], id="if<ifCountOld>"), div([h3([text("else<ifCountOld>")]), elseElems], id="else<ifCountOld>")]), ifCount>;
+      return <div([div(ifElems, id="if<ifCountOld>"), div(elseElems, id="else<ifCountOld>")], style="display: none;"), ifCount>;
     }
     case ifstm(AExpr guard, list[AQuestion] ifQuestions): {
       ifCount += 1;
       int ifCountOld = ifCount;
-      list[HTMLElement] ifElems = [];
+      list[HTMLElement] ifElems = [h3([text("if<ifCountOld>")])];
       for (AQuestion q <- ifQuestions) {
-        ifElems += questionToHtml(q, ifCount);
+        ifElems += questionToHtml(q, ifCount)<0>;
       }
-      return <div([h3([text("if<ifCountOld>")]), ifElems], id="if<ifCountOld>"), ifCount>;
+      return <div(ifElems, id="if<ifCountOld>", style="display: none;"), ifCount>;
     }
-  }
+}
   return (<unknownElement([]), ifCount>);
 }
 
 HTMLElement inputTypeOfzoIGuess(AType t, AId id) {
   switch (t.name) {
-    case "boolean": return input(id=id.name, \type="checkbox");
-    case "string": return input(id=id.name, \type="text");
-    case "integer": return input(id=id.name, \type="number");
+    case "boolean": return input(id=id.name, \type="checkbox", onchange="update()");
+    case "string": return input(id=id.name, \type="text", onchange="update()");
+    case "integer": return input(id=id.name, \type="number", onchange="update()");
   }
   return unknownElement([]);
 }
 
 str form2js(AForm f) {
-  return "";
+  jsString = "function update() {\n";
+  int ifCount = 0;
+  visit (f) {
+    case question(str question, AId id, AType t, AExpr assignvalue): {
+      jsString += "document.getElementById(\"<id.name>\").innerHTML = <assignvalue>; ";
+    }
+    case ifstm(AExpr guard, list[AQuestion] ifQuestions, list[AQuestion] elseQuestions): {
+      ifCount += 1;
+      jsString += "if (<guard>) {\n";
+      jsString += "document.getElementById(\"if<ifCount>\").style.display = \"block\";\n";
+      jsString += "document.getElementById(\"else<ifCount>\").style.display = \"none\";\n";
+      jsString += "} else {\n";
+      jsString += "document.getElementById(\"if<ifCount>\").style.display = \"none\";\n";
+      jsString += "document.getElementById(\"else<ifCount>\").style.display = \"block\";\n";
+      jsString += "}";
+    }
+    case ifstm(AExpr guard, list[AQuestion] ifQuestions): {
+      ifCount += 1;
+      jsString += "if (<guard>) {\n";
+      jsString += "document.getElementById(\"if<ifCount>\").style.display = \"block\";\n";
+      jsString += "} else {\n";
+      jsString += "document.getElementById(\"if<ifCount>\").style.display = \"none\";\n";
+      jsString += "}\n";
+    }
+  }
+  return jsString + "}";
 }
