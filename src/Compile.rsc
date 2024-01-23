@@ -53,7 +53,7 @@ tuple[HTMLElement, int] questionToHtml(AQuestion q, int ifCount) {
         ifCount = t<1>;
         elseElems += t<0>;
       }
-      return <div([div(ifElems, id="if<ifCountOld>"), div(elseElems, id="else<ifCountOld>")], style="display: none;"), ifCount>;
+      return <div([div(ifElems, id="if<ifCountOld>", style="display: none;"), div(elseElems, id="else<ifCountOld>", style="display: none;")]), ifCount>;
     }
     case ifstm(AExpr guard, list[AQuestion] ifQuestions): {
       ifCount += 1;
@@ -92,7 +92,7 @@ str form2js(AForm f) {
       jsString += "} else {\n";
       jsString += "document.getElementById(\"if<ifCount>\").style.display = \"none\";\n";
       jsString += "document.getElementById(\"else<ifCount>\").style.display = \"block\";\n";
-      jsString += "}";
+      jsString += "}\n";
     }
     case ifstm(AExpr guard, list[AQuestion] ifQuestions): {
       ifCount += 1;
