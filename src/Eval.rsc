@@ -75,6 +75,13 @@ VEnv eval(AQuestion q, Input inp, VEnv venv) {
   return (); 
 }
 
+str idToStr(AExpr e) {
+  switch (e) {
+    case ref(id(str x)): return x;
+    default: throw "not an identifier";
+  }
+}
+
 Value eval(AExpr e, VEnv venv) {
   switch (e) {
     case ref(id(str x)): return venv[x];

@@ -2,6 +2,7 @@ module Compile
 
 import AST;
 import Resolve;
+import Eval;
 import IO;
 import lang::html::AST; // see standard library
 import lang::html::IO;
@@ -20,7 +21,10 @@ import String;
  * - if needed, use the name analysis to link uses to definitions
  */
 
+VEnv venv;
+
 void compile(AForm f) {
+  venv = initialEnv(f);
   writeFile(f.src[extension="js"].top, form2js(f));
   writeFile(f.src[extension="html"].top, writeHTMLString(form2html(f)));
 }
@@ -82,11 +86,11 @@ str form2js(AForm f) {
   int ifCount = 0;
   visit (f) {
     case question(str question, AId id, AType t, AExpr assignvalue): {
-      jsString += "document.getElementById(\"<id.name>\").innerHTML = \"<assignvalue>\";\n";
+      jsString += "document.getElementById(\"<id.name>\").innerHTML = \"<eval(assignvalue, venv)>\";\n";
     }
     case ifstm(AExpr guard, list[AQuestion] ifQuestions, list[AQuestion] elseQuestions): {
       ifCount += 1;
-      jsString += "if (<guard>) {\n";
+      jsString += "if (document.getElementById(\"<idToStr(guard)>\").checked) {\n";
       jsString += "document.getElementById(\"if<ifCount>\").style.display = \"block\";\n";
       jsString += "document.getElementById(\"else<ifCount>\").style.display = \"none\";\n";
       jsString += "} else {\n";
@@ -96,7 +100,7 @@ str form2js(AForm f) {
     }
     case ifstm(AExpr guard, list[AQuestion] ifQuestions): {
       ifCount += 1;
-      jsString += "if (<guard>) {\n";
+      jsString += "if (document.getElementById(\"<idToStr(guard)>\").checked) {\n";
       jsString += "document.getElementById(\"if<ifCount>\").style.display = \"block\";\n";
       jsString += "} else {\n";
       jsString += "document.getElementById(\"if<ifCount>\").style.display = \"none\";\n";
