@@ -82,7 +82,7 @@ str form2js(AForm f) {
   int ifCount = 0;
   visit (f) {
     case question(str question, AId id, AType t, AExpr assignvalue): {
-      jsString += "document.getElementById(\"<id.name>\").innerHTML = <assignvalue>; ";
+      jsString += "document.getElementById(\"<id.name>\").innerHTML = \"<assignvalue>\";\n";
     }
     case ifstm(AExpr guard, list[AQuestion] ifQuestions, list[AQuestion] elseQuestions): {
       ifCount += 1;
