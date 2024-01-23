@@ -78,8 +78,23 @@ VEnv eval(AQuestion q, Input inp, VEnv venv) {
 Value eval(AExpr e, VEnv venv) {
   switch (e) {
     case ref(id(str x)): return venv[x];
-    
-    // etc.
+    case string(str x): return vstr(x);
+    case integer(int x): return vint(x);
+    case boolean(bool x): return vbool(x);
+    case neg(AExpr expr): return vint(-eval(expr).n);
+    case mul(AExpr left, AExpr right): return vint(eval(left).n * eval(right).n);
+    case div(AExpr left, AExpr right): return vint(eval(left).n / eval(right).n);
+    case add(AExpr left, AExpr right): return vint(eval(left).n + eval(right).n);
+    case sub(AExpr left, AExpr right): return vint(eval(left).n - eval(right).n);
+    case and(AExpr left, AExpr right): return vbool(eval(left).b && eval(right).b);
+    case or(AExpr left, AExpr right): return vbool(eval(left).b || eval(right).b);
+    case eq(AExpr left, AExpr right): return vbool(eval(left) == eval(right));
+    case neq(AExpr left, AExpr right): return vbool(eval(left) != eval(right));
+    case lt(AExpr left, AExpr right): return vbool(eval(left).n < eval(right).n);
+    case leq(AExpr left, AExpr right): return vbool(eval(left).n <= eval(right).n);
+    case gt(AExpr left, AExpr right): return vbool(eval(left).n > eval(right).n);
+    case geq(AExpr left, AExpr right): return vbool(eval(left).n >= eval(right).n);
+    case not(AExpr expr): return vbool(!eval(expr).b);
     
     default: throw "Unsupported expression <e>";
   }
