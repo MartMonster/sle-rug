@@ -39,8 +39,8 @@ syntax Expr =
   | non-assoc Expr "\>=" Expr
   | non-assoc Expr "==" Expr
   | non-assoc Expr "!=" Expr)
-  > non-assoc Expr "&&" Expr
-  > non-assoc Expr "||" Expr
+  > left Expr "&&" Expr
+  > left Expr "||" Expr
   ;
   
 syntax Type = "integer" | "boolean";
