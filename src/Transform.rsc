@@ -5,7 +5,6 @@ import Resolve;
 import AST;
 import CST2AST;
 import ParseTree;
-import IO;
 
 /* 
  * Transforming QL forms
