@@ -3,6 +3,9 @@ module Transform
 import Syntax;
 import Resolve;
 import AST;
+import CST2AST;
+import ParseTree;
+import IO;
 
 /* 
  * Transforming QL forms
@@ -65,11 +68,27 @@ list[AQuestion] flatten(AQuestion q, AExpr newGuard) {
  * Use the results of name resolution to find the equivalence class of a name.
  *
  */
- 
-start[Form] rename(start[Form] f, loc useOrDef, str newName, UseDef useDef) {
-   return f; 
-} 
- 
- 
- 
 
+start[Form] rename(start[Form] f, loc useOrDef, str newName, UseDef useDef) {
+  loc def;
+  for (tuple[loc, loc] t <- useDef) {
+    if (t<0> == useOrDef || t<1> == useOrDef) {
+      def = t<1>;
+      break;
+    }
+  }
+
+  set[loc] locations = {def};
+  for (tuple[loc, loc] t <- useDef) {
+    if (t<1> == def) {
+      locations += t<0>;
+    }
+  }
+
+  return visit(f) {
+    case Id name => {
+      if(name.src in locations) parse(#Id, newName);
+      else name;
+    }
+  };
+}
