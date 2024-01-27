@@ -31,21 +31,32 @@ import AST;
 AForm flatten(AForm f) {
   list[AQuestion] newList = [];
   for (AQuestion q <- f.questions) {
-    switch (q) {
-      case ifstm(AExpr guard, list[AQuestion] ifQuestions, list[AQuestion] elseQuestions): {
-        for (AQuestion q1 <- ifQuestions) {
-          switch (q1) {
-            case ifstm(AExpr guard1, list[AQuestion] ifQuestions1, list[AQuestion] elseQuestions1): {
-              newList += ifstm(guard && guard1, ifQuestions1, elseQuestions1); // dit maar dan dus recursive en voor alles. succes.
-            }
-          }
-        }
-      }
-      case ifstm(AExpr guard, list[AQuestion] ifQuestions): ;
-      default: newList += q;
-    }
+    newList += flatten(q, boolean(true));
   }
   return form("<f.name>", newList, src=f.src); 
+}
+
+list[AQuestion] flatten(AQuestion q, AExpr newGuard) {
+  switch (q) {
+    case ifstm(AExpr guard, list[AQuestion] ifQuestions, list[AQuestion] elseQuestions): {
+      list[AQuestion] newQuestions = [];
+      for (AQuestion q1 <- ifQuestions) {
+        newQuestions += flatten(q1, and(newGuard, guard));
+      }
+      for (AQuestion q2 <- elseQuestions) {
+        newQuestions += flatten(q2, and(newGuard, not(guard)));
+      }
+      return newQuestions;
+    }
+    case ifstm(AExpr guard, list[AQuestion] ifQuestions): {
+      list[AQuestion] newQuestions = [];
+      for (AQuestion q1 <- ifQuestions) {
+        newQuestions += flatten(q1, and(newGuard, guard));
+      }
+      return newQuestions;
+    }
+    default: return [ifstm(newGuard, [q])];
+  }
 }
 
 /* Rename refactoring:
